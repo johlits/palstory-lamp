@@ -1,0 +1,38 @@
+version: '3.8'
+
+services:
+  database:
+    image: mysql:8.0
+    container_name: palstory-mysql
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: tiger
+      MYSQL_DATABASE: story
+      MYSQL_USER: docker
+      MYSQL_PASSWORD: docker
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ../palstory/src/html/story.sql:/docker-entrypoint-initdb.d/story.sql:ro
+
+  webserver:
+    build:
+      context: ./bin/php8
+    container_name: palstory-webserver
+    restart: always
+    ports:
+      - "80:80"
+    depends_on:
+      - database
+    volumes:
+      - ../palstory/src/html:/var/www/html
+    environment:
+      DB_SERVER: database
+      DB_USERNAME: root
+      DB_PASSWORD: tiger
+      ADMIN_GAME: admin_game
+      SUPER_ADMIN_GAME: super_admin_game
+
+volumes:
+  mysql_data:

@@ -1,0 +1,32 @@
+version: '3.8'
+
+services:
+  database:
+    image: mysql:8.0
+    container_name: palstory-mysql
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: tiger
+      MYSQL_DATABASE: story
+      MYSQL_USER: docker
+      MYSQL_PASSWORD: docker
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+
+  webserver:
+    image: johlits/palstory:latest   # pull this from Docker Hub
+    container_name: palstory-webserver
+    restart: always
+    ports:
+      - "80:80"
+    depends_on:
+      - database
+    environment:
+      DB_SERVER: database
+      DB_USERNAME: root
+      DB_PASSWORD: tiger
+
+volumes:
+  mysql_data:

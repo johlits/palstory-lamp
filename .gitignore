@@ -1,0 +1,19 @@
+/.vscode
+/config/*
+/data/*
+/logs/*
+/www/**
+.DS_Store
+/buildtest
+
+# Docker volumes and data
+mysql/
+redis/
+
+# Additional IDE files
+.idea/
+*.swp
+*.swo
+
+# OS files
+Thumbs.db
