@@ -14,7 +14,7 @@ services:
       - "3306:3306"
     volumes:
       - mysql_data:/var/lib/mysql
-      - ../palstory/src/html/story.sql:/docker-entrypoint-initdb.d/story.sql:ro
+      - ../palstory-game/src/html/story.sql:/docker-entrypoint-initdb.d/story.sql:ro
 
   webserver:
     build:
@@ -26,7 +26,7 @@ services:
     depends_on:
       - database
     volumes:
-      - ../palstory/src/html:/var/www/html
+      - ../palstory-game/src/html:/var/www/html
     environment:
       DB_SERVER: database
       DB_USERNAME: root

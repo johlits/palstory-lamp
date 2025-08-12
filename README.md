@@ -20,7 +20,7 @@ This directory contains the Docker configuration for running PalStory in a local
 ```bash
 # Clone the repository
 git clone <repository-url>
-cd palstory-ai/palstory-lamp/
+cd palstory/palstory-lamp/
 
 # Copy environment configuration (optional - has sensible defaults)
 cp .env.example .env
@@ -79,8 +79,8 @@ After starting the containers, configure the PalStory application:
 
 1. **Copy configuration files**:
    ```bash
-   cp ../palstory/src/html/config.php.example ../palstory/src/html/config.php
-   cp ../palstory/src/html/story/config.js.example ../palstory/src/html/story/config.js
+   cp ../palstory-game/src/html/config.php.example ../palstory-game/src/html/config.php
+   cp ../palstory-game/src/html/story/config.js.example ../palstory-game/src/html/story/config.js
    ```
 
 2. **Update database settings** in `config.php`:
