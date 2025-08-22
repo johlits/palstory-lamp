@@ -15,6 +15,19 @@ services:
     volumes:
       - mysql_data:/var/lib/mysql
 
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin:5
+    container_name: palstory-phpmyadmin
+    restart: always
+    depends_on:
+      - database
+    ports:
+      - "8080:80"
+    environment:
+      PMA_HOST: database
+      PMA_USER: docker
+      PMA_PASSWORD: docker
+
   webserver:
     image: johlits/palstory:latest   # pull this from Docker Hub
     container_name: palstory-webserver
@@ -23,10 +36,16 @@ services:
       - "80:80"
     depends_on:
       - database
+    volumes:
+      - ../palstory-game/src/html:/var/www/html
     environment:
       DB_SERVER: database
-      DB_USERNAME: root
-      DB_PASSWORD: tiger
+      DB_USERNAME: docker
+      DB_PASSWORD: docker
+      DB_NAME: story
+      MIGRATE_TOKEN: change_me_secure_token
+      ADMIN_GAME: admin_game
+      SUPER_ADMIN_GAME: super_admin_game
 
 volumes:
   mysql_data:

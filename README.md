@@ -11,8 +11,6 @@ This directory contains the Docker configuration for running PalStory in a local
 - **PHP 8.2** with Apache web server
 - **MySQL 8.0** database server
 - **phpMyAdmin** for database management
-- **Redis** for caching (optional)
-- **Xdebug 3.3.1** for PHP debugging
 - **Volume mounting** for live code editing
 
 ## Quick Start
@@ -22,51 +20,72 @@ This directory contains the Docker configuration for running PalStory in a local
 git clone <repository-url>
 cd palstory/palstory-lamp/
 
-# Copy environment configuration (optional - has sensible defaults)
-cp .env.example .env
-
-# Start the containers (database will auto-initialize)
+# Start the containers
 docker-compose up -d
 
 # Visit the application
 # http://localhost/story
 ```
 
-**That's it!** The database will automatically initialize with all required tables and data on first startup.
+**Initialize the database (first-time only):**
+
+Open the migration runner in your browser (replace token if changed):
+
+```
+http://localhost/migration_runner.php?token=change_me_secure_token
+```
+
+This will apply all SQL files in `src/html/migrations/` idempotently and seed initial data.
+
+## Ports and URLs
+
+- Web UI: http://localhost/story
+- PHP/Apache port: `80:80` (host:container)
+- MySQL port: `3306:3306` (host:container)
+- phpMyAdmin: http://localhost:8080
+
+### Migration Runner (token-gated)
+
+Run pending DB migrations via:
+
+```
+http://localhost/migration_runner.php?token=change_me_secure_token
+```
+
+- The token value is controlled by `MIGRATE_TOKEN` in `docker-compose.yml` under the `webserver` service. Change it for your environment.
+- Safe to run multiple times; only unapplied migrations will execute.
+
+### Health and Admin Endpoints
+
+- Health: `http://localhost/health.php` → JSON `{ status: "ok" }` when DB is reachable
+- Admin players (requires token):
+  - `http://localhost/admin_players.php?token=<MIGRATE_TOKEN>`
+- Admin logs (requires token):
+  - `http://localhost/admin_logs.php?token=<MIGRATE_TOKEN>&limit=200`
+- Admin dashboard (HTML UI):
+  - `http://localhost/admin.html` (enter `MIGRATE_TOKEN` to view data)
 
 ## Configuration
-
-### Environment Variables (.env)
-
-Create a `.env` file with the following variables:
-
-```env
-# HTTP Ports
-HTTP_PORT=80
-HTTPS_PORT=443
-
-# MySQL Configuration
-MYSQL_ROOT_PASSWORD=tiger
-MYSQL_USER=docker
-MYSQL_PASSWORD=docker
-MYSQL_DATABASE=story
-
-# Additional Services
-MYSQL_PORT=3306
-REDIS_PORT=6379
-PHPMYADMIN_PORT=8080
-```
 
 ### Docker Services
 
 - **webserver**: PHP 8.2 + Apache with application code
 - **database**: MySQL 8.0 with persistent data storage
 - **phpmyadmin**: Web interface for database management
-- **redis**: Redis cache server (optional)
 
 ## Database Setup
 
-**Automatic Initialization**: The database automatically initializes with all required tables and data on first startup. No manual setup required!
+**Apply migrations (recommended)**
+
+- Use the migration runner at `http://localhost/migration_runner.php?token=<MIGRATE_TOKEN>`.
+- Safe to run multiple times; only unapplied migrations execute.
+
+**Reset database (optional)**
+
+```bash
+docker-compose down -v   # WARNING: deletes DB data
+docker-compose up -d
+```
 
 **Access phpMyAdmin**: http://localhost:8080
 - Server: `database`
@@ -80,7 +99,7 @@ After starting the containers, configure the PalStory application:
 1. **Copy configuration files**:
    ```bash
    cp ../palstory-game/src/html/config.php.example ../palstory-game/src/html/config.php
-   cp ../palstory-game/src/html/story/config.js.example ../palstory-game/src/html/story/config.js
+   cp ../palstory-game/src/html/config.js.example ../palstory-game/src/html/config.js
    ```
 
 2. **Update database settings** in `config.php`:
@@ -107,9 +126,11 @@ docker-compose down -v        # Stop and remove volumes
 
 ### Debugging
 ```bash
-docker-compose logs webserver # View web server logs
-docker-compose logs database  # View database logs
-docker exec -it palstory-lamp_webserver_1 bash  # Access container shell
+docker-compose logs webserver    # View web server logs
+docker-compose logs database     # View database logs
+docker-compose logs phpmyadmin   # View phpMyAdmin logs
+docker exec -it palstory-webserver bash  # Access webserver shell
+docker exec -it palstory-mysql mysql -u docker -pdocker story  # Access MySQL shell
 ```
 
 ## File Structure
@@ -117,8 +138,7 @@ docker exec -it palstory-lamp_webserver_1 bash  # Access container shell
 ```
 palstory-lamp/
 ├── docker-compose.yml       # Main Docker Compose configuration
-├── docker-compose.simple.yml # Simplified configuration
-├── .env                     # Environment variables
+├── docker-compose.simple.yml # Simplified configuration (if present)
 ├── bin/
 │   └── php8/
 │       └── Dockerfile       # PHP 8.2 container definition
@@ -129,10 +149,19 @@ palstory-lamp/
 
 ### Common Issues
 
-1. **Port conflicts**: Change ports in `.env` if 80, 3306, or 8080 are in use
+1. **Port conflicts**: Change ports in `docker-compose.yml` if 80, 3306, or 8080 are in use
 2. **Permission issues**: Ensure Docker has access to the project directory
 3. **Database connection**: Use service name `database` instead of `localhost`
-4. **Xdebug**: Configure your IDE to connect to port 9003
+
+### Migrations didn't apply
+
+- Ensure you opened the migration URL with the correct token (see `MIGRATE_TOKEN` in `docker-compose.yml`).
+- Check logs: `docker-compose logs webserver`.
+
+### Linux specifics
+
+- Ensure relative mount `../palstory-game/src/html` in `docker-compose.yml` resolves correctly from this directory.
+- If SELinux/AppArmor interferes with mounts, try adding `:z` (SELinux) or review Docker permissions.
 
 ### Useful Commands
 
@@ -144,7 +173,7 @@ docker-compose build --no-cache
 docker-compose ps
 
 # Access MySQL directly
-docker exec -it palstory-lamp_database_1 mysql -u docker -pdocker story
+docker exec -it palstory-mysql mysql -u docker -pdocker story
 
 # Reset database (removes all data and re-initializes)
 docker-compose down -v
@@ -157,7 +186,7 @@ This setup is for development only. For production:
 
 1. Use official images without development tools
 2. Set proper security configurations
-3. Use environment-specific `.env` files
+3. Use environment-specific environment variables or compose override files
 4. Implement proper backup strategies
 5. Configure SSL certificates
 
