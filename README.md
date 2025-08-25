@@ -24,7 +24,7 @@ cd palstory/palstory-lamp/
 docker-compose up -d
 
 # Visit the application
-# http://localhost/story
+# http://localhost/game
 ```
 
 **Initialize the database (first-time only):**
@@ -39,7 +39,7 @@ This will apply all SQL files in `src/html/migrations/` idempotently and seed in
 
 ## Ports and URLs
 
-- Web UI: http://localhost/story
+- Web UI: http://localhost/game
 - PHP/Apache port: `80:80` (host:container)
 - MySQL port: `3306:3306` (host:container)
 - phpMyAdmin: http://localhost:8080
